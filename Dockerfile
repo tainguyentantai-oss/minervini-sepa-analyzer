@@ -1,19 +1,21 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+# Create a non-root user with UID 1000 for Hugging Face Spaces
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR $HOME/app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+COPY --chown=user:user requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-COPY . .
+# Copy project files
+COPY --chown=user:user . .
 
-# Hugging Face Spaces / Cloud Port
 ENV PORT=7860
 EXPOSE 7860
 
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-7860}"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]

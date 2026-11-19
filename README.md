@@ -1,3 +1,13 @@
+---
+title: Minervini SEPA Analyzer
+emoji: 📈
+colorFrom: emerald
+colorTo: slate
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Minervini SEPA Analyzer (Vietnam Stock Market)
 
 Hệ thống phân tích kỹ thuật và tài chính cơ bản chuẩn **SEPA (Specific Order Execution Method)** của **Mark Minervini** và **CANSLIM** dành cho thị trường chứng khoán Việt Nam (HOSE, HNX).
