@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minervini SEPA Analyzer | Phân tích Cổ phiếu Chuẩn SEPA</title>
+  <title>Minervini SEPA Analyzer | Phân tích Cổ phiếu Chuẩn SEPA & Định giá</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17,9 +17,9 @@
         extend: {
           colors: {
             brand: {
-              dark: '#0f172a',
-              card: '#1e293b',
-              border: '#334155',
+              dark: '#0b1120',
+              card: '#151f32',
+              border: '#24344d',
               green: '#10b981',
               accent: '#38bdf8'
             }
@@ -35,8 +35,8 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
       background: #334155;
@@ -44,12 +44,12 @@
     }
   </style>
 </head>
-<body class="min-h-screen p-4 md:p-6 text-slate-200">
+<body class="min-h-screen p-3 md:p-5 text-slate-200">
 
   <!-- Top Navigation Header -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-4">
+  <header class="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-slate-800 gap-3">
     <div class="flex items-center gap-3">
-      <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
+      <div class="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
         <i data-lucide="trending-up" class="w-6 h-6"></i>
       </div>
       <div>
@@ -57,12 +57,12 @@
           MINERVINI SEPA ANALYZER
         </h1>
         <p class="text-xs text-slate-400">
-          Hệ thống phân tích kỹ thuật & cơ bản chuẩn SEPA (Dữ liệu: HOSE, HNX, Simplize & Fireant)
+          Hệ thống phân tích kỹ thuật chuẩn SEPA, Định giá & Đồng thuận CTCK (Dữ liệu 3 - 5 năm)
         </p>
       </div>
     </div>
 
-    <!-- Symbol Search & Quick Watchlist -->
+    <!-- Symbol Search & Actions -->
     <div class="flex items-center gap-2">
       <div class="relative">
         <input 
@@ -70,19 +70,18 @@
           type="text" 
           value="FPT" 
           placeholder="Mã CP (FPT, HPG...)" 
-          class="bg-slate-800/90 border border-slate-700 uppercase font-bold text-white px-4 py-2 rounded-lg text-sm focus:outline-none focus:border-emerald-500 w-32 md:w-40 tracking-wider shadow-inner"
+          class="bg-slate-800/90 border border-slate-700 uppercase font-bold text-white px-3.5 py-1.5 rounded-lg text-sm focus:outline-none focus:border-emerald-500 w-32 md:w-36 tracking-wider shadow-inner"
           onkeypress="if(event.key === 'Enter') loadStockData()"
         />
       </div>
       <button 
         onclick="loadStockData()"
-        class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-1.5 transition-colors shadow-lg shadow-emerald-900/30"
+        class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors shadow-lg shadow-emerald-900/30"
       >
         <i data-lucide="search" class="w-4 h-4"></i>
         <span>Xem</span>
       </button>
 
-      <!-- Quick trigger manual update -->
       <button 
         onclick="triggerDailyUpdate()"
         title="Cập nhật nến mới nhất"
@@ -93,176 +92,283 @@
     </div>
   </header>
 
-  <!-- Stock Summary Banner -->
-  <section class="mt-4 bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 md:p-5 flex flex-wrap items-center justify-between gap-4 backdrop-blur shadow-xl">
+  <!-- Stock Summary Banner (Expanded with Target Price & Valuation) -->
+  <section class="mt-3 bg-slate-900/90 border border-slate-800/80 rounded-xl p-3.5 md:p-4 flex flex-wrap items-center justify-between gap-4 backdrop-blur shadow-xl">
     <div class="flex items-center gap-3">
-      <div class="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg font-black text-xl tracking-wider" id="badge-symbol">
+      <div class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg font-black text-xl tracking-wider" id="badge-symbol">
         FPT
       </div>
       <div>
         <h2 class="text-base font-semibold text-white" id="stock-name">Công ty Cổ phần FPT</h2>
         <div class="flex items-center gap-2 text-xs text-slate-400">
           <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span id="stock-source">Nguồn chính thống: HOSE / DNSE & Simplize API</span>
+          <span id="stock-source">HOSE / Dữ liệu lịch sử 5 năm & BCTC kiểm toán</span>
         </div>
       </div>
     </div>
 
-    <!-- Quick KPIs -->
-    <div class="flex flex-wrap items-center gap-6 md:gap-8">
+    <!-- Quick KPIs Matrix -->
+    <div class="flex flex-wrap items-center gap-5 md:gap-7">
       <div>
-        <div class="text-xs text-slate-400 font-medium">Giá Hiện Tại</div>
+        <div class="text-[11px] text-slate-400 font-medium">Giá Hiện Tại</div>
         <div class="text-xl md:text-2xl font-bold text-white tracking-tight" id="stock-price">
           -- đ
         </div>
       </div>
 
-      <div class="border-l border-slate-800 pl-6">
-        <div class="text-xs text-slate-400 font-medium">RS Rating</div>
-        <div class="flex items-center gap-1.5 mt-0.5">
+      <div class="border-l border-slate-800 pl-5">
+        <div class="text-[11px] text-slate-400 font-medium">RS Rating</div>
+        <div class="flex items-center gap-1 mt-0.5">
           <span class="text-xl md:text-2xl font-bold text-amber-400" id="stock-rs">--</span>
           <span class="text-xs text-slate-500 font-semibold">/ 99</span>
         </div>
       </div>
 
-      <div class="border-l border-slate-800 pl-6">
-        <div class="text-xs text-slate-400 font-medium">Trend Template</div>
+      <div class="border-l border-slate-800 pl-5">
+        <div class="text-[11px] text-slate-400 font-medium">Trend Template</div>
         <div class="mt-1">
-          <span id="badge-trend-status" class="px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-            ĐẠT (--/8)
+          <span id="badge-trend-status" class="px-2.5 py-0.5 text-xs font-bold rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            --
           </span>
+        </div>
+      </div>
+
+      <div class="border-l border-slate-800 pl-5">
+        <div class="text-[11px] text-slate-400 font-medium">Giá MT CTCK (Consensus)</div>
+        <div class="flex items-center gap-2 mt-0.5">
+          <span class="text-lg md:text-xl font-bold text-white" id="val-consensus-target">-- đ</span>
+          <span id="badge-upside" class="px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            --%
+          </span>
+        </div>
+      </div>
+
+      <div class="border-l border-slate-800 pl-5">
+        <div class="text-[11px] text-slate-400 font-medium">Định Giá (P/E | PEG)</div>
+        <div class="text-sm md:text-base font-bold text-sky-400 mt-1" id="kpi-pe-peg">
+          P/E: -- | PEG: --
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Main Grid Layout (2 Cols: Chart on Left, Panels on Right) -->
-  <main class="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+  <!-- Main Grid Layout (2 Cols: Left Chart 8 cols, Right Panels 4 cols) -->
+  <main class="mt-3 grid grid-cols-1 lg:grid-cols-12 gap-3.5">
 
-    <!-- LEFT COLUMN: Technical Chart (8 cols) -->
-    <div class="lg:col-span-8 bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 flex flex-col shadow-xl">
-      <!-- Chart Header with Legends -->
-      <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-800 gap-2">
-        <h3 class="text-sm font-bold tracking-wide text-white uppercase flex items-center gap-2">
-          <i data-lucide="candlestick-chart" class="w-4 h-4 text-emerald-400"></i>
-          Biểu Đồ Giá & Khối Lượng (Kèm Điểm Mua Minervini)
-        </h3>
-        
-        <div class="flex items-center gap-4 text-xs font-medium text-slate-300">
-          <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-emerald-400"></span>
-            <span>Điểm mua Breakout</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-cyan-400"></span>
-            <span>Điểm mua Pivot</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-blue-500"></span>
-            <span>Khối lượng (Volume)</span>
-          </div>
+    <!-- LEFT COLUMN: Multi-pane Chart Container (Price on top, Volume on bottom, synchronized) -->
+    <div class="lg:col-span-8 bg-slate-900/90 border border-slate-800/80 rounded-xl p-3.5 flex flex-col shadow-xl">
+      
+      <!-- Chart Controls & Header -->
+      <div class="flex flex-wrap items-center justify-between pb-2.5 border-b border-slate-800 gap-2">
+        <div class="flex items-center gap-2">
+          <h3 class="text-xs md:text-sm font-bold tracking-wide text-white uppercase flex items-center gap-1.5">
+            <i data-lucide="candlestick-chart" class="w-4 h-4 text-emerald-400"></i>
+            Biểu Đồ Giá & Khối Lượng Tách Biệt
+          </h3>
+          <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-800 text-slate-400 border border-slate-700" id="bars-count-badge">
+            1500 phiên (5 năm)
+          </span>
+        </div>
+
+        <!-- Zoom Timeframes (6T, 1N, 3N, 5N, Tất cả) -->
+        <div class="flex items-center gap-1 bg-slate-800/80 p-0.5 rounded-lg border border-slate-700 text-[11px]">
+          <button onclick="setTimeRange(125)" class="px-2 py-0.5 rounded hover:bg-slate-700 text-slate-300 font-medium transition">6T</button>
+          <button onclick="setTimeRange(250)" class="px-2 py-0.5 rounded bg-emerald-600/30 text-emerald-400 font-bold transition">1N</button>
+          <button onclick="setTimeRange(750)" class="px-2 py-0.5 rounded hover:bg-slate-700 text-slate-300 font-medium transition">3N</button>
+          <button onclick="setTimeRange(1250)" class="px-2 py-0.5 rounded hover:bg-slate-700 text-slate-300 font-medium transition">5N</button>
+          <button onclick="resetTimeRange()" class="px-2 py-0.5 rounded hover:bg-slate-700 text-slate-300 font-medium transition">Toàn bộ</button>
         </div>
       </div>
 
-      <!-- Chart Container -->
-      <div id="chart-wrapper" class="relative w-full h-[480px] mt-2">
+      <!-- MA Indicator Legend Bar (Interactive hover updates) -->
+      <div class="flex flex-wrap items-center justify-between py-1.5 text-[11px] text-slate-300 border-b border-slate-800/60 gap-y-1">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-1 rounded-sm bg-[#eab308]"></span>
+            <span>MA10: <strong id="hover-ma10" class="text-white">--</strong></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-1 rounded-sm bg-[#06b6d4]"></span>
+            <span>MA20: <strong id="hover-ma20" class="text-white">--</strong></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-1.5 rounded-sm bg-[#3b82f6]"></span>
+            <span>MA50: <strong id="hover-ma50" class="text-white font-semibold">--</strong></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-1 rounded-sm bg-[#f97316]"></span>
+            <span>MA150: <strong id="hover-ma150" class="text-white">--</strong></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-1.5 rounded-sm bg-[#a855f7]"></span>
+            <span>MA200: <strong id="hover-ma200" class="text-white font-semibold">--</strong></span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-slate-400">
+          <span>O: <strong id="hover-o" class="text-slate-200">--</strong></span>
+          <span>H: <strong id="hover-h" class="text-slate-200">--</strong></span>
+          <span>L: <strong id="hover-l" class="text-slate-200">--</strong></span>
+          <span>C: <strong id="hover-c" class="text-slate-200">--</strong></span>
+          <span>Vol: <strong id="hover-vol" class="text-cyan-400">--</strong></span>
+        </div>
+      </div>
+
+      <!-- Unified Chart Container (with separate top Price pane & bottom Volume pane) -->
+      <div id="chart-wrapper" class="relative w-full h-[540px] mt-1">
         <div id="chart-container" class="w-full h-full"></div>
-        <div id="chart-loader" class="absolute inset-0 bg-slate-900/80 flex items-center justify-center">
+        
+        <!-- Visual Sub-Pane Divider Label -->
+        <div class="absolute bottom-[27%] left-3 pointer-events-none flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+          <span>Khối lượng (Volume) & MA50 Vol</span>
+        </div>
+
+        <div id="chart-loader" class="absolute inset-0 bg-slate-900/90 flex items-center justify-center">
           <div class="flex items-center gap-2 text-sm text-slate-400">
             <i data-lucide="loader-2" class="w-5 h-5 animate-spin text-emerald-400"></i>
-            Đang tải dữ liệu biểu đồ...
+            Đang tải dữ liệu 3-5 năm lịch sử...
           </div>
         </div>
       </div>
 
-      <!-- Moving Average Summary Bar -->
-      <div class="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
-        <div class="flex items-center gap-4">
-          <span><strong class="text-slate-300">MA20:</strong> <span id="val-ma20">--</span></span>
-          <span><strong class="text-slate-300">MA50:</strong> <span id="val-ma50">--</span></span>
-          <span><strong class="text-slate-300">MA150:</strong> <span id="val-ma150">--</span></span>
-          <span><strong class="text-slate-300">MA200:</strong> <span id="val-ma200">--</span></span>
+      <!-- Signals Legend & Minervini Range Metrics -->
+      <div class="mt-2.5 pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-sm bg-emerald-400"></span>
+            <span>Breakout VCP</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-sm bg-cyan-400"></span>
+            <span>Pivot (Vol +50%)</span>
+          </div>
         </div>
+
         <div>
-          <span>Đỉnh 52W: <strong class="text-emerald-400" id="val-high-52w">--</strong></span>
-          <span class="ml-3">Đáy 52W: <strong class="text-rose-400" id="val-low-52w">--</strong></span>
+          <span>Đỉnh 52T: <strong class="text-emerald-400" id="val-high-52w">--</strong></span>
+          <span class="ml-3">Đáy 52T: <strong class="text-rose-400" id="val-low-52w">--</strong></span>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Trend Template & Financials (4 cols) -->
-    <div class="lg:col-span-4 flex flex-col gap-4">
+    <!-- RIGHT COLUMN: 3 Functional Panels (4 cols) -->
+    <div class="lg:col-span-4 flex flex-col gap-3">
 
-      <!-- PANEL 1: Bộ Lọc Trend Template -->
-      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 shadow-xl">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center gap-2">
+      <!-- CARD 1: Bộ Lọc Trend Template Minervini (8 tiêu chí) -->
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-xl p-3.5 shadow-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div class="flex items-center gap-1.5">
             <i data-lucide="list-checks" class="w-4 h-4 text-amber-400"></i>
-            <h3 class="text-sm font-bold tracking-wide text-white uppercase">Bộ Lọc Trend Template</h3>
+            <h3 class="text-xs font-bold tracking-wide text-white uppercase">Bộ Lọc Trend Template</h3>
           </div>
-          <span class="text-xs text-slate-400 font-semibold tracking-wider">MARK MINERVINI</span>
+          <span class="text-[10px] text-slate-400 font-semibold tracking-wider">MARK MINERVINI (8/8)</span>
         </div>
 
-        <div class="mt-3 space-y-2.5" id="trend-criteria-list">
-          <!-- Rendered via JS -->
-          <div class="text-xs text-slate-500 py-4 text-center">Đang kiểm tra 8 tiêu chí...</div>
+        <div class="mt-2 space-y-1.5" id="trend-criteria-list">
+          <div class="text-xs text-slate-500 py-3 text-center">Đang nạp 8 tiêu chí...</div>
         </div>
       </div>
 
-      <!-- PANEL 2: Báo Cáo Tài Chính (FA) -->
-      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 shadow-xl">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center gap-2">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-sky-400"></i>
-            <h3 class="text-sm font-bold tracking-wide text-white uppercase">Báo Cáo Tài Chính</h3>
+      <!-- CARD 2: Giá Mục Tiêu & Khuyến Nghị Các CTCK -->
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-xl p-3.5 shadow-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+            <h3 class="text-xs font-bold tracking-wide text-white uppercase">Đồng Thuận Giá Mục Tiêu CTCK</h3>
           </div>
-          <span class="text-xs text-slate-400 font-semibold tracking-wider" id="fa-source">NGUỒN: SIMPLIZE / BCTC</span>
+          <span class="text-[10px] text-emerald-400 font-bold uppercase" id="badge-consensus-action">MUA</span>
         </div>
 
-        <div class="mt-3 overflow-x-auto">
-          <table class="w-full text-xs text-left">
+        <!-- Consensus Target Highlight Box -->
+        <div class="mt-2.5 p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] text-slate-400">Giá Mục Tiêu Trung Bình</div>
+            <div class="text-lg font-bold text-white tracking-tight" id="box-consensus-price">-- đ</div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] text-slate-400">Tiềm Năng Tăng Giá</div>
+            <div class="text-base font-bold text-emerald-400" id="box-upside-pct">+--%</div>
+          </div>
+        </div>
+
+        <!-- Broker Reports Table -->
+        <div class="mt-2.5 overflow-x-auto max-h-36 custom-scrollbar">
+          <table class="w-full text-[11px] text-left">
             <thead>
-              <tr class="text-slate-400 border-b border-slate-800">
-                <th class="pb-2 font-medium">Chỉ tiêu cơ bản</th>
-                <th class="pb-2 text-right font-medium" id="col-quarter-header">Quý gần nhất</th>
-                <th class="pb-2 text-right font-medium">Đánh giá</th>
+              <tr class="text-slate-400 border-b border-slate-800 text-[10px]">
+                <th class="pb-1 font-medium">CTCK</th>
+                <th class="pb-1 font-medium">Đánh giá</th>
+                <th class="pb-1 text-right font-medium">Giá MT</th>
+                <th class="pb-1 text-right font-medium">Upside</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-800/60" id="fa-table-body">
-              <tr>
-                <td class="py-2.5 font-medium text-slate-200">Tăng trưởng EPS (YoY)</td>
-                <td class="py-2.5 text-right font-bold text-white" id="fa-eps">--</td>
-                <td class="py-2.5 text-right"><span id="badge-eps" class="px-2 py-0.5 rounded text-[10px] font-bold">--</span></td>
-              </tr>
-              <tr>
-                <td class="py-2.5 font-medium text-slate-200">Tăng trưởng Doanh thu</td>
-                <td class="py-2.5 text-right font-bold text-white" id="fa-rev">--</td>
-                <td class="py-2.5 text-right"><span id="badge-rev" class="px-2 py-0.5 rounded text-[10px] font-bold">--</span></td>
-              </tr>
-              <tr>
-                <td class="py-2.5 font-medium text-slate-200">Biên lợi nhuận gộp</td>
-                <td class="py-2.5 text-right font-bold text-white" id="fa-gm">--</td>
-                <td class="py-2.5 text-right"><span id="badge-gm" class="px-2 py-0.5 rounded text-[10px] font-bold">--</span></td>
-              </tr>
-              <tr>
-                <td class="py-2.5 font-medium text-slate-200">ROE (Lợi nhuận/vốn)</td>
-                <td class="py-2.5 text-right font-bold text-white" id="fa-roe">--</td>
-                <td class="py-2.5 text-right"><span id="badge-roe" class="px-2 py-0.5 rounded text-[10px] font-bold">--</span></td>
-              </tr>
+            <tbody class="divide-y divide-slate-800/60" id="broker-reports-body">
+              <tr><td colspan="4" class="py-2 text-center text-slate-500">Đang tải báo cáo CTCK...</td></tr>
             </tbody>
           </table>
         </div>
+      </div>
 
-        <!-- Footer notes as in mockup -->
-        <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-1.5 text-[11px] text-slate-400">
-          <div class="flex items-center gap-2">
-            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
-            <span>Báo cáo kiểm toán/soát xét định kỳ cập nhật từ Vietstock / Simplize Datafeed.</span>
+      <!-- CARD 3: Định Giá Doanh Nghiệp & Báo Cáo Tài Chính -->
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-xl p-3.5 shadow-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="calculator" class="w-4 h-4 text-sky-400"></i>
+            <h3 class="text-xs font-bold tracking-wide text-white uppercase">Định Giá & Báo Cáo Tài Chính</h3>
           </div>
-          <div class="flex items-center gap-2">
-            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
-            <span>Khối lượng & Giá khớp lệnh thời gian thực từ Sở GDCK.</span>
+          <span class="text-[10px] text-slate-400 font-semibold" id="fa-source">QUÝ GẦN NHẤT</span>
+        </div>
+
+        <!-- Valuation Matrix Grid -->
+        <div class="mt-2.5 grid grid-cols-2 gap-2 text-xs">
+          <div class="p-2 rounded bg-slate-800/50 border border-slate-800">
+            <div class="text-[10px] text-slate-400">P/E Trailing</div>
+            <div class="text-sm font-bold text-white mt-0.5" id="val-pe">--</div>
+            <div class="text-[9px] text-slate-500">TB Ngành: <span id="val-pe-hist">--</span></div>
           </div>
+          <div class="p-2 rounded bg-slate-800/50 border border-slate-800">
+            <div class="text-[10px] text-slate-400">P/B</div>
+            <div class="text-sm font-bold text-white mt-0.5" id="val-pb">--</div>
+            <div class="text-[9px] text-slate-500">ROE: <span id="val-roe-mini">--%</span></div>
+          </div>
+          <div class="p-2 rounded bg-slate-800/50 border border-slate-800 col-span-2 flex items-center justify-between">
+            <div>
+              <div class="text-[10px] text-slate-400">Chỉ số PEG (Peter Lynch)</div>
+              <div class="text-sm font-bold text-sky-400 mt-0.5" id="val-peg">--</div>
+            </div>
+            <span id="badge-peg" class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+              --
+            </span>
+          </div>
+        </div>
+
+        <!-- Quarterly Financials Table -->
+        <div class="mt-2.5 overflow-x-auto">
+          <table class="w-full text-[11px] text-left">
+            <tbody class="divide-y divide-slate-800/60">
+              <tr>
+                <td class="py-1.5 font-medium text-slate-300">Tăng trưởng EPS (YoY)</td>
+                <td class="py-1.5 text-right font-bold text-white" id="fa-eps">--</td>
+                <td class="py-1.5 text-right"><span id="badge-eps" class="px-1.5 py-0.5 rounded text-[9px] font-bold">--</span></td>
+              </tr>
+              <tr>
+                <td class="py-1.5 font-medium text-slate-300">Tăng trưởng Doanh thu</td>
+                <td class="py-1.5 text-right font-bold text-white" id="fa-rev">--</td>
+                <td class="py-1.5 text-right"><span id="badge-rev" class="px-1.5 py-0.5 rounded text-[9px] font-bold">--</span></td>
+              </tr>
+              <tr>
+                <td class="py-1.5 font-medium text-slate-300">Biên lợi nhuận gộp</td>
+                <td class="py-1.5 text-right font-bold text-white" id="fa-gm">--</td>
+                <td class="py-1.5 text-right"><span id="badge-gm" class="px-1.5 py-0.5 rounded text-[9px] font-bold">--</span></td>
+              </tr>
+              <tr>
+                <td class="py-1.5 font-medium text-slate-300">ROE (Lợi nhuận/vốn)</td>
+                <td class="py-1.5 text-right font-bold text-white" id="fa-roe">--</td>
+                <td class="py-1.5 text-right"><span id="badge-roe" class="px-1.5 py-0.5 rounded text-[9px] font-bold">--</span></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -271,7 +377,9 @@
 
   <!-- JavaScript Client Logic -->
   <script>
-    let chart, candleSeries, volumeSeries;
+    let chart, candleSeries, volumeSeries, volMaSeries;
+    let ma10Series, ma20Series, ma50Series, ma150Series, ma200Series;
+    let currentChartData = [];
 
     function initChart() {
       if (typeof LightweightCharts === 'undefined') {
@@ -282,8 +390,8 @@
       const container = document.getElementById('chart-container');
       container.innerHTML = '';
 
-      const w = container.clientWidth || container.parentElement.clientWidth || 800;
-      const h = container.clientHeight || 480;
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 540;
 
       try {
         chart = LightweightCharts.createChart(container, {
@@ -294,77 +402,152 @@
             textColor: '#94a3b8',
           },
           grid: {
-            vertLines: { color: 'rgba(51, 65, 85, 0.4)' },
-            horzLines: { color: 'rgba(51, 65, 85, 0.4)' },
+            vertLines: { color: 'rgba(36, 52, 77, 0.4)' },
+            horzLines: { color: 'rgba(36, 52, 77, 0.4)' },
           },
           crosshair: {
             mode: LightweightCharts.CrosshairMode.Normal,
           },
           rightPriceScale: {
-            borderColor: '#334155',
+            borderColor: '#24344d',
             scaleMargins: {
-              top: 0.1,
-              bottom: 0.25,
+              top: 0.05,
+              bottom: 0.28, // Leave bottom 28% for Volume Pane
             },
           },
           timeScale: {
-            borderColor: '#334155',
+            borderColor: '#24344d',
             timeVisible: true,
           },
         });
 
-        // Volume Series (support v4 & v5)
-        if (typeof chart.addHistogramSeries === 'function') {
-          volumeSeries = chart.addHistogramSeries({
-            color: '#26a69a',
-            priceFormat: { type: 'volume' },
-            priceScaleId: '',
-            scaleMargins: { top: 0.8, bottom: 0 },
-          });
-        } else if (LightweightCharts.HistogramSeries) {
-          volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
-            color: '#26a69a',
-            priceFormat: { type: 'volume' },
-            priceScaleId: '',
-            scaleMargins: { top: 0.8, bottom: 0 },
-          });
-        }
+        // 1. Candlestick Series (Price Pane - Top 72%)
+        candleSeries = chart.addCandlestickSeries({
+          upColor: '#10b981',
+          downColor: '#ef4444',
+          borderVisible: false,
+          wickUpColor: '#10b981',
+          wickDownColor: '#ef4444',
+        });
 
-        // Candlestick Series (support v4 & v5)
-        if (typeof chart.addCandlestickSeries === 'function') {
-          candleSeries = chart.addCandlestickSeries({
-            upColor: '#10b981',
-            downColor: '#ef4444',
-            borderVisible: false,
-            wickUpColor: '#10b981',
-            wickDownColor: '#ef4444',
-          });
-        } else if (LightweightCharts.CandlestickSeries) {
-          candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
-            upColor: '#10b981',
-            downColor: '#ef4444',
-            borderVisible: false,
-            wickUpColor: '#10b981',
-            wickDownColor: '#ef4444',
-          });
-        }
+        // 2. The 5 Moving Average Line Series
+        ma10Series = chart.addLineSeries({
+          color: '#eab308',
+          lineWidth: 1.5,
+          title: 'MA10',
+          priceScaleId: 'right'
+        });
+        ma20Series = chart.addLineSeries({
+          color: '#06b6d4',
+          lineWidth: 1.5,
+          title: 'MA20',
+          priceScaleId: 'right'
+        });
+        ma50Series = chart.addLineSeries({
+          color: '#3b82f6',
+          lineWidth: 2,
+          title: 'MA50',
+          priceScaleId: 'right'
+        });
+        ma150Series = chart.addLineSeries({
+          color: '#f97316',
+          lineWidth: 1.5,
+          title: 'MA150',
+          priceScaleId: 'right'
+        });
+        ma200Series = chart.addLineSeries({
+          color: '#a855f7',
+          lineWidth: 2,
+          title: 'MA200',
+          priceScaleId: 'right'
+        });
 
-        // Responsive resize
+        // 3. Volume Sub-Pane (Dedicated scale at the bottom 25%)
+        chart.priceScale('volume').applyOptions({
+          scaleMargins: {
+            top: 0.76, // Start volume pane at 76% from top
+            bottom: 0.02,
+          },
+          borderVisible: false,
+        });
+
+        volumeSeries = chart.addHistogramSeries({
+          priceScaleId: 'volume',
+          priceFormat: {
+            type: 'volume',
+          },
+        });
+
+        volMaSeries = chart.addLineSeries({
+          priceScaleId: 'volume',
+          color: 'rgba(148, 163, 184, 0.7)',
+          lineWidth: 1,
+          lineStyle: LightweightCharts.LineStyle.Dashed,
+          title: 'MA50 Vol'
+        });
+
+        // 4. Crosshair Move Handler for dynamic legend values
+        chart.subscribeCrosshairMove(param => {
+          if (!param || !param.time || !param.seriesPrices) {
+            updateLegendWithLatest();
+            return;
+          }
+          const priceData = param.seriesPrices.get(candleSeries);
+          const volData = param.seriesPrices.get(volumeSeries);
+          const ma10 = param.seriesPrices.get(ma10Series);
+          const ma20 = param.seriesPrices.get(ma20Series);
+          const ma50 = param.seriesPrices.get(ma50Series);
+          const ma150 = param.seriesPrices.get(ma150Series);
+          const ma200 = param.seriesPrices.get(ma200Series);
+
+          if (priceData) {
+            document.getElementById('hover-o').innerText = Number(priceData.open || 0).toLocaleString('vi-VN');
+            document.getElementById('hover-h').innerText = Number(priceData.high || 0).toLocaleString('vi-VN');
+            document.getElementById('hover-l').innerText = Number(priceData.low || 0).toLocaleString('vi-VN');
+            document.getElementById('hover-c').innerText = Number(priceData.close || 0).toLocaleString('vi-VN');
+          }
+          if (volData !== undefined) {
+            document.getElementById('hover-vol').innerText = Number(volData).toLocaleString('vi-VN');
+          }
+          document.getElementById('hover-ma10').innerText = ma10 ? Number(ma10).toLocaleString('vi-VN') : '--';
+          document.getElementById('hover-ma20').innerText = ma20 ? Number(ma20).toLocaleString('vi-VN') : '--';
+          document.getElementById('hover-ma50').innerText = ma50 ? Number(ma50).toLocaleString('vi-VN') : '--';
+          document.getElementById('hover-ma150').innerText = ma150 ? Number(ma150).toLocaleString('vi-VN') : '--';
+          document.getElementById('hover-ma200').innerText = ma200 ? Number(ma200).toLocaleString('vi-VN') : '--';
+        });
+
+        // Responsive auto-resize
         if (window.ResizeObserver) {
           new ResizeObserver(entries => {
             if (!entries || entries.length === 0) return;
             const { width, height } = entries[0].contentRect;
             if (chart && width > 0) {
-              chart.applyOptions({ width, height: height || 480 });
+              chart.applyOptions({ width, height: height || 540 });
             }
           }).observe(container);
         }
 
         return true;
       } catch (err) {
-        console.error('Error initializing chart:', err);
+        console.error('Error initializing multi-pane chart:', err);
         return false;
       }
+    }
+
+    function updateLegendWithLatest() {
+      if (!currentChartData || currentChartData.length === 0) return;
+      const last = currentChartData[currentChartData.length - 1];
+      document.getElementById('hover-o').innerText = Number(last.open || 0).toLocaleString('vi-VN');
+      document.getElementById('hover-h').innerText = Number(last.high || 0).toLocaleString('vi-VN');
+      document.getElementById('hover-l').innerText = Number(last.low || 0).toLocaleString('vi-VN');
+      document.getElementById('hover-c').innerText = Number(last.close || 0).toLocaleString('vi-VN');
+      document.getElementById('hover-vol').innerText = Number(last.volume || 0).toLocaleString('vi-VN');
+
+      document.getElementById('hover-ma10').innerText = last.ma10 ? Number(last.ma10).toLocaleString('vi-VN') : '--';
+      document.getElementById('hover-ma20').innerText = last.ma20 ? Number(last.ma20).toLocaleString('vi-VN') : '--';
+      document.getElementById('hover-ma50').innerText = last.ma50 ? Number(last.ma50).toLocaleString('vi-VN') : '--';
+      document.getElementById('hover-ma150').innerText = last.ma150 ? Number(last.ma150).toLocaleString('vi-VN') : '--';
+      document.getElementById('hover-ma200').innerText = last.ma200 ? Number(last.ma200).toLocaleString('vi-VN') : '--';
     }
 
     async function loadStockData() {
@@ -374,13 +557,11 @@
       if (loader) loader.classList.remove('hidden');
 
       try {
-        console.log('Fetching stock analysis for:', symbol);
         const response = await fetch(`/api/stock/${symbol}`);
         if (!response.ok) {
           throw new Error('Không thể tải dữ liệu cho mã ' + symbol);
         }
         const data = await response.json();
-        console.log('Data received:', data);
         renderDashboard(data);
       } catch (err) {
         console.error('loadStockData error:', err);
@@ -392,8 +573,9 @@
 
     function renderDashboard(data) {
       if (!data) return;
+      currentChartData = data.chart_data || [];
 
-      // 1. Header & KPIs
+      // 1. Header & Top KPIs
       document.getElementById('badge-symbol').innerText = data.symbol || '--';
       document.getElementById('stock-name').innerText = data.company_name || ('Công ty ' + data.symbol);
       document.getElementById('stock-price').innerText = Number(data.current_price || 0).toLocaleString('vi-VN') + ' đ';
@@ -402,36 +584,108 @@
       const trendStatus = document.getElementById('badge-trend-status');
       if (data.trend_template) {
         trendStatus.innerText = data.trend_template.status;
-        if (data.trend_template.passed) {
-          trendStatus.className = 'px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-        } else {
-          trendStatus.className = 'px-2.5 py-1 text-xs font-bold rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30';
-        }
+        trendStatus.className = 'px-2.5 py-0.5 text-xs font-bold rounded-md ' + 
+          (data.trend_template.passed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30');
       }
 
-      // 2. Render Chart Data safely
+      // Consensus Target & Upside
+      const bc = data.broker_consensus || {};
+      if (bc.consensus_target) {
+        document.getElementById('val-consensus-target').innerText = Number(bc.consensus_target).toLocaleString('vi-VN') + ' đ';
+        document.getElementById('box-consensus-price').innerText = Number(bc.consensus_target).toLocaleString('vi-VN') + ' đ';
+        
+        const upsideVal = bc.upside_pct || 0;
+        const bUpside = document.getElementById('badge-upside');
+        const boxUpside = document.getElementById('box-upside-pct');
+        const sign = upsideVal > 0 ? '+' : '';
+        bUpside.innerText = sign + upsideVal + '%';
+        boxUpside.innerText = sign + upsideVal + '%';
+        bUpside.className = 'px-2 py-0.5 text-[11px] font-bold rounded ' + 
+          (upsideVal > 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30');
+        boxUpside.className = 'text-base font-bold ' + (upsideVal > 0 ? 'text-emerald-400' : 'text-rose-400');
+        
+        document.getElementById('badge-consensus-action').innerText = bc.recommendation || 'MUA';
+      }
+
+      // Valuation KPIs
+      const val = data.valuation || {};
+      document.getElementById('kpi-pe-peg').innerText = `P/E: ${val.pe_trailing || '--'} | PEG: ${val.peg || '--'}`;
+      document.getElementById('val-pe').innerText = val.pe_trailing || '--';
+      document.getElementById('val-pe-hist').innerText = val.pe_historical_avg || '--';
+      document.getElementById('val-pb').innerText = val.pb || '--';
+      document.getElementById('val-peg').innerText = val.peg || '--';
+      
+      const bPeg = document.getElementById('badge-peg');
+      bPeg.innerText = val.peg_assessment || '--';
+      bPeg.className = `px-2 py-0.5 rounded text-[10px] font-bold ${val.peg_color || 'text-sky-400'} bg-slate-800 border border-slate-700`;
+
+      // 2. Render Broker Reports Table
+      const brokerTbody = document.getElementById('broker-reports-body');
+      brokerTbody.innerHTML = '';
+      const reports = bc.reports || [];
+      if (reports.length > 0) {
+        reports.forEach(r => {
+          const tr = document.createElement('tr');
+          const up = r.upside || 0;
+          tr.className = 'hover:bg-slate-800/40 transition';
+          tr.innerHTML = `
+            <td class="py-1.5 font-medium text-slate-200">${r.broker}</td>
+            <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${r.action.includes('MUA') ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${r.action}</span></td>
+            <td class="py-1.5 text-right font-semibold text-white">${Number(r.target_price).toLocaleString('vi-VN')} đ</td>
+            <td class="py-1.5 text-right font-bold ${up > 0 ? 'text-emerald-400' : 'text-rose-400'}">${up > 0 ? '+' : ''}${up}%</td>
+          `;
+          brokerTbody.appendChild(tr);
+        });
+      } else {
+        brokerTbody.innerHTML = '<tr><td colspan="4" class="py-2 text-center text-slate-500">Chưa có báo cáo phân tích</td></tr>';
+      }
+
+      // 3. Render Multi-pane Chart (3 - 5 Years History + 5 MAs + Volume)
       try {
         if (!chart) initChart();
 
-        if (chart && candleSeries && volumeSeries && data.chart_data && data.chart_data.length > 0) {
-          const candles = data.chart_data.map(d => ({
+        if (chart && currentChartData.length > 0) {
+          document.getElementById('bars-count-badge').innerText = `${currentChartData.length} phiên (${(currentChartData.length / 250).toFixed(1)} năm)`;
+
+          // Candles
+          const candles = currentChartData.map(d => ({
             time: d.date,
             open: d.open,
             high: d.high,
             low: d.low,
             close: d.close
           }));
+          candleSeries.setData(candles);
 
-          const volumes = data.chart_data.map(d => ({
+          // Volume bars
+          const volumes = currentChartData.map(d => ({
             time: d.date,
             value: d.volume,
-            color: d.close >= d.open ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'
+            color: d.close >= d.open ? 'rgba(16, 185, 129, 0.45)' : 'rgba(239, 68, 68, 0.45)'
           }));
-
-          candleSeries.setData(candles);
           volumeSeries.setData(volumes);
 
-          // Markers (Minervini Buy Signals)
+          // Volume MA50 line
+          const volMas = currentChartData
+            .filter(d => d.vol_ma50 !== null && d.vol_ma50 !== undefined)
+            .map(d => ({ time: d.date, value: d.vol_ma50 }));
+          volMaSeries.setData(volMas);
+
+          // 5 MA lines
+          const setMa = (series, key) => {
+            const arr = currentChartData
+              .filter(d => d[key] !== null && d[key] !== undefined)
+              .map(d => ({ time: d.date, value: d[key] }));
+            series.setData(arr);
+          };
+
+          setMa(ma10Series, 'ma10');
+          setMa(ma20Series, 'ma20');
+          setMa(ma50Series, 'ma50');
+          setMa(ma150Series, 'ma150');
+          setMa(ma200Series, 'ma200');
+
+          // Buy Signals (Pivot & Breakout VCP)
           if (data.signals && data.signals.length > 0) {
             const seenDates = new Set();
             const validMarkers = [];
@@ -452,35 +706,33 @@
             candleSeries.setMarkers([]);
           }
 
-          chart.timeScale().fitContent();
+          // Initial zoom: Focus on last 200 trading days (~10 months) for clear candles,
+          // while full 5 years remain accessible by scrolling back!
+          const totalBars = currentChartData.length;
+          chart.timeScale().setVisibleLogicalRange({
+            from: Math.max(0, totalBars - 180),
+            to: totalBars
+          });
+
+          updateLegendWithLatest();
         }
       } catch (chartErr) {
-        console.error('Error drawing chart:', chartErr);
+        console.error('Error drawing multi-pane chart:', chartErr);
       }
 
-      chart.timeScale().fitContent();
-
-      // 3. Technical Indicator values
+      // 4. Render 52W High / Low
       const m = data.trend_template.metrics || {};
       document.getElementById('val-high-52w').innerText = Number(m.high_52w || 0).toLocaleString('vi-VN');
       document.getElementById('val-low-52w').innerText = Number(m.low_52w || 0).toLocaleString('vi-VN');
 
-      const lastRow = data.chart_data[data.chart_data.length - 1] || {};
-      document.getElementById('val-ma20').innerText = lastRow.ma20 ? Number(lastRow.ma20).toLocaleString('vi-VN') : '--';
-      document.getElementById('val-ma50').innerText = lastRow.ma50 ? Number(lastRow.ma50).toLocaleString('vi-VN') : '--';
-      document.getElementById('val-ma150').innerText = lastRow.ma150 ? Number(lastRow.ma150).toLocaleString('vi-VN') : '--';
-      document.getElementById('val-ma200').innerText = lastRow.ma200 ? Number(lastRow.ma200).toLocaleString('vi-VN') : '--';
-
-      // 4. Render Trend Template Criteria List
+      // 5. Render Trend Template Criteria List
       const criteriaList = document.getElementById('trend-criteria-list');
       criteriaList.innerHTML = '';
       data.trend_template.criteria.forEach(c => {
         const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-2 rounded-lg bg-slate-800/40 border border-slate-800/60 text-xs';
+        item.className = 'flex items-center justify-between p-1.5 px-2 rounded-lg bg-slate-800/40 border border-slate-800/60 text-xs';
         item.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="text-slate-200 font-medium">${c.title}</span>
-          </div>
+          <span class="text-slate-200 font-medium text-[11px]">${c.title}</span>
           <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
             c.passed 
               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
@@ -492,54 +744,63 @@
         criteriaList.appendChild(item);
       });
 
-      // 5. Render Financial Indicators
+      // 6. Render Financial Ratios
       const f = data.fundamentals || {};
-      document.getElementById('col-quarter-header').innerText = f.quarter || 'Quý gần nhất';
-
-      // EPS YoY
       const epsVal = f.eps_growth_yoy;
       const elEps = document.getElementById('fa-eps');
       const bEps = document.getElementById('badge-eps');
       if (epsVal !== null && epsVal !== undefined) {
         elEps.innerText = (epsVal > 0 ? '+' : '') + epsVal + '%';
         bEps.innerText = epsVal >= 25 ? 'Tốt (> 25%)' : (epsVal > 0 ? 'Đạt' : 'Kém');
-        bEps.className = 'px-2 py-0.5 rounded text-[10px] font-bold ' + 
+        bEps.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold ' + 
           (epsVal >= 25 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30');
       }
 
-      // Revenue YoY
       const revVal = f.rev_growth_yoy;
       const elRev = document.getElementById('fa-rev');
       const bRev = document.getElementById('badge-rev');
       if (revVal !== null && revVal !== undefined) {
         elRev.innerText = (revVal > 0 ? '+' : '') + revVal + '%';
         bRev.innerText = revVal >= 20 ? 'Tốt' : (revVal > 0 ? 'Đạt' : 'Kém');
-        bRev.className = 'px-2 py-0.5 rounded text-[10px] font-bold ' + 
+        bRev.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold ' + 
           (revVal >= 20 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-300');
       }
 
-      // Gross Margin
       const gmVal = f.gross_margin;
       const elGm = document.getElementById('fa-gm');
       const bGm = document.getElementById('badge-gm');
       if (gmVal !== null && gmVal !== undefined) {
         elGm.innerText = gmVal + '%';
         bGm.innerText = gmVal >= 30 ? 'Cao' : 'Ổn định';
-        bGm.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30';
+        bGm.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30';
       }
 
-      // ROE
       const roeVal = f.roe;
       const elRoe = document.getElementById('fa-roe');
       const bRoe = document.getElementById('badge-roe');
       if (roeVal !== null && roeVal !== undefined) {
         elRoe.innerText = roeVal + '%';
+        document.getElementById('val-roe-mini').innerText = roeVal + '%';
         bRoe.innerText = roeVal >= 20 ? 'Rất Mạnh' : (roeVal >= 15 ? 'Tốt' : 'Trung bình');
-        bRoe.className = 'px-2 py-0.5 rounded text-[10px] font-bold ' + 
+        bRoe.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold ' + 
           (roeVal >= 20 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30');
       }
 
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Quick Zoom Range Buttons
+    function setTimeRange(barCount) {
+      if (!chart || !currentChartData || currentChartData.length === 0) return;
+      const total = currentChartData.length;
+      chart.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, total - barCount),
+        to: total
+      });
+    }
+
+    function resetTimeRange() {
+      if (chart) chart.timeScale().fitContent();
     }
 
     async function triggerDailyUpdate() {

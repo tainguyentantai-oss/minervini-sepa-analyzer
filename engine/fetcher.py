@@ -13,7 +13,7 @@ HEADERS = {
     'Accept': 'application/json, text/plain, */*'
 }
 
-def fetch_ohlcv(symbol: str, days: int = 500) -> pd.DataFrame:
+def fetch_ohlcv(symbol: str, days: int = 1825) -> pd.DataFrame:
     """
     Fetch historical daily OHLCV for a stock symbol.
     Uses Entrade / DNSE public chart API with fallback to VNDirect.

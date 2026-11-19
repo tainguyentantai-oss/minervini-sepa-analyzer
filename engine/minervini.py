@@ -17,7 +17,8 @@ def calculate_technical_indicators(df: pd.DataFrame) -> pd.DataFrame:
     if len(df) < 20:
         return df
 
-    # Moving averages
+    # Moving averages (MA10, MA20, MA50, MA150, MA200)
+    df['ma10'] = df['close'].rolling(window=10).mean()
     df['ma20'] = df['close'].rolling(window=20).mean()
     df['ma50'] = df['close'].rolling(window=50).mean()
     df['ma150'] = df['close'].rolling(window=150).mean()

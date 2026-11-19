@@ -17,6 +17,7 @@ from apscheduler.triggers.cron import CronTrigger
 from engine.fetcher import fetch_ohlcv, fetch_financial_ratios, get_company_name
 from engine.minervini import calculate_technical_indicators, evaluate_trend_template, detect_minervini_signals
 from engine.rs_rating import calculate_stock_rs_score
+from engine.valuation import get_broker_consensus, calculate_valuation_metrics
 from engine.storage import (
     save_ohlcv, load_ohlcv, save_rs_rating, get_rs_rating,
     save_fundamentals, get_fundamentals
@@ -62,26 +63,24 @@ async def read_root(request: Request):
 async def get_stock_analysis(symbol: str):
     symbol = symbol.upper().strip()
 
-    # 1. Load from DB or Fetch live
+    # 1. Load from DB or Fetch live (3 - 5 years of history)
     df = load_ohlcv(symbol)
-    if df is None or len(df) < 50:
-        df = fetch_ohlcv(symbol, days=365)
+    if df is None or len(df) < 500:
+        df = fetch_ohlcv(symbol, days=1825)
         if df is not None and len(df) > 0:
             save_ohlcv(symbol, df)
 
     if df is None or len(df) == 0:
         return JSONResponse(status_code=404, content={"error": f"Không tìm thấy dữ liệu cho mã {symbol}"})
 
-    # 2. Calculate Indicators & Minervini signals
+    # 2. Calculate Indicators (MA10, MA20, MA50, MA150, MA200) & Minervini signals
     df_calc = calculate_technical_indicators(df)
     signals = detect_minervini_signals(df_calc)
 
     # 3. RS Rating (1-99)
     rs_val = get_rs_rating(symbol)
     if rs_val is None:
-        # Approximate score if market rank isn't built yet
         raw_score = calculate_stock_rs_score(df_calc)
-        # Normalize typical score to 50-95 percentile estimate
         rs_val = min(99, max(1, int(50 + raw_score * 40)))
         save_rs_rating(symbol, rs_val)
 
@@ -98,8 +97,12 @@ async def get_stock_analysis(symbol: str):
     current_price = float(df_calc.iloc[-1]['close'])
     company_name = get_company_name(symbol)
 
-    # Format chart data
-    chart_records = df_calc.tail(250).to_dict(orient='records')
+    # 6. Broker Consensus Target Price & Valuation
+    broker_consensus = get_broker_consensus(symbol, current_price)
+    valuation = calculate_valuation_metrics(symbol, current_price, fin_data or {})
+
+    # Format chart data (up to 1,500 trading days ~ 5-6 years)
+    chart_records = df_calc.tail(1500).to_dict(orient='records')
     # Clean NaN values for JSON serialization
     for row in chart_records:
         for k, v in row.items():
@@ -112,8 +115,10 @@ async def get_stock_analysis(symbol: str):
         "current_price": current_price,
         "rs_rating": rs_val,
         "trend_template": trend_res,
-        "signals": signals[-10:], # latest signals
+        "signals": signals[-15:], # latest signals
         "fundamentals": fin_data,
+        "broker_consensus": broker_consensus,
+        "valuation": valuation,
         "chart_data": chart_records
     }
 
