@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 import duckdb
 import pandas as pd
 
-DB_DIR = Path(__file__).resolve().parent.parent / "data"
+DB_DIR = Path(os.environ.get("DB_DIR", "/tmp" if os.environ.get("VERCEL") else (Path(__file__).resolve().parent.parent / "data")))
 DB_PATH = DB_DIR / "stock_data.duckdb"
 
 def get_connection():
