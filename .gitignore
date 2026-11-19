@@ -1,0 +1,17 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Data and Cache
+data/*.duckdb
+data/*.wal
+
+# Mac
+.DS_Store
+
+# Environment
+.env
