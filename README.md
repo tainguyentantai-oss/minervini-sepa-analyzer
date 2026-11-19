@@ -1,8 +1,8 @@
 ---
 title: Minervini SEPA Analyzer
 emoji: 📈
-colorFrom: emerald
-colorTo: slate
+colorFrom: green
+colorTo: gray
 sdk: docker
 app_port: 7860
 pinned: false
