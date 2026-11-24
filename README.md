@@ -81,3 +81,11 @@ Sau đó mở trình duyệt truy cập: **`http://127.0.0.1:8000`**
 .venv/bin/python scheduler/daily_update.py
 ```
 Hoặc bấm trực tiếp vào biểu tượng **Sync/Làm mới** ở góc trên bên phải thanh tìm kiếm trên Web.
+
+---
+
+## 🖥️ Hướng Dẫn Cài Đặt Khi Tải Sang Máy Mới
+
+Nếu bạn clone hoặc tải mã nguồn này sang một máy tính mới (Windows, macOS hoặc Linux), vui lòng xem hướng dẫn chi tiết từng bước từ cài đặt môi trường, tạo `.venv`, cài `requirements.txt` đến cấu hình Git tại file:
+👉 **[Xem chi tiết hướng dẫn tại SETUP.md](SETUP.md)**
+
