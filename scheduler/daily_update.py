@@ -15,8 +15,13 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 from engine.fetcher import fetch_ohlcv, fetch_financial_ratios
+from engine.flow import fetch_combined_daily_flow
+from engine.valuation import fetch_broker_reports_live, fetch_company_valuation_live
 from engine.rs_rating import calculate_market_rs_ratings
-from engine.storage import save_ohlcv, save_rs_rating, save_fundamentals
+from engine.storage import (
+    save_ohlcv, save_rs_rating, save_fundamentals, save_daily_flow,
+    save_broker_reports, save_company_valuation,
+)
 
 # Default universe of top liquid and growth stocks in Vietnam
 WATCHLIST = [
@@ -61,6 +66,31 @@ def run_daily_update(watchlist=None):
             time.sleep(0.1)
         except Exception as e:
             print(f"Lỗi tải BCTC {sym}: {e}")
+
+    # Fetch and save Micro-Flow (Active Buy/Sell & Foreign Net Flow)
+    print("-> Đang lưu dữ liệu Dòng tiền (Mua/Bán chủ động chuẩn SSI & Khối ngoại)...")
+    for sym in watchlist:
+        try:
+            df_flow, _ = fetch_combined_daily_flow(sym)
+            if df_flow is not None and len(df_flow) > 0:
+                save_daily_flow(sym, df_flow)
+            time.sleep(0.15)
+        except Exception as e:
+            print(f"Lỗi tải Dòng tiền {sym}: {e}")
+
+    # Refresh Broker Reports & Live Company Valuation Cache
+    print("-> Đang làm mới Báo cáo CTCK & Định giá doanh nghiệp...")
+    for sym in watchlist:
+        try:
+            reps = fetch_broker_reports_live(sym)
+            if reps:
+                save_broker_reports(sym, reps)
+            val_live = fetch_company_valuation_live(sym)
+            if val_live:
+                save_company_valuation(sym, val_live)
+            time.sleep(0.15)
+        except Exception as e:
+            print(f"Lỗi cập nhật CTCK/Định giá {sym}: {e}")
 
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hoàn tất cập nhật dữ liệu thành công!")
 

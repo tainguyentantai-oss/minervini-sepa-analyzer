@@ -1,44 +1,61 @@
 """
-Minervini SEPA Analyzer - Web Server
-Built with FastAPI, DuckDB, Pandas, and TradingView Lightweight Charts
+Minervini SEPA Analyzer - Web Server + Self-Hosted MCP Server + AI Analyst
+Built with FastAPI, DuckDB, Pandas, TradingView Lightweight Charts, and MCP JSON-RPC 2.0
 """
 import os
 from pathlib import Path
-from datetime import datetime
 from typing import Optional
 
-from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, BackgroundTasks, Query
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from engine.fetcher import fetch_ohlcv, fetch_financial_ratios, get_company_name
-from engine.minervini import calculate_technical_indicators, evaluate_trend_template, detect_minervini_signals
-from engine.rs_rating import calculate_stock_rs_score
-from engine.valuation import get_broker_consensus, calculate_valuation_metrics
-from engine.storage import (
-    save_ohlcv, load_ohlcv, save_rs_rating, get_rs_rating,
-    save_fundamentals, get_fundamentals
-)
-from scheduler.daily_update import run_daily_update, WATCHLIST
+from engine.service import get_stock_ohlcv_df, get_full_stock_analysis
+from engine.backtest import run_backtest
+from engine.ai_analyst import analyze_stock_ai
+from engine.mcp_core import handle_mcp_jsonrpc, get_mcp_server_metadata
+from scheduler.daily_update import run_daily_update
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 os.makedirs(STATIC_DIR, exist_ok=True)
 
-app = FastAPI(title="Minervini SEPA Analyzer")
+app = FastAPI(title="Minervini SEPA Analyzer & MCP Server")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Background Scheduler for daily 15:30 EOD update (Mon-Fri)
 scheduler = AsyncIOScheduler()
 
+
+class AiAnalyzeRequest(BaseModel):
+    mode: str = "builtin"
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+    ollama_url: Optional[str] = None
+
+
+def _check_mcp_auth(request: Request) -> bool:
+    """Optional Bearer/token auth when MCP_API_KEY env var is configured."""
+    expected = os.environ.get("MCP_API_KEY", "").strip()
+    if not expected:
+        return True
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        if auth_header[7:].strip() == expected:
+            return True
+    if request.query_params.get("token", "").strip() == expected:
+        return True
+    return False
+
+
 @app.on_event("startup")
 async def startup_event():
-    # Schedule daily job at 15:30 Monday-Friday (Asia/Ho_Chi_Minh timezone)
     scheduler.add_job(
         run_daily_update,
         CronTrigger(day_of_week='mon-fri', hour=15, minute=30, timezone='Asia/Ho_Chi_Minh'),
@@ -60,67 +77,110 @@ async def read_root(request: Request):
 
 
 @app.get("/api/stock/{symbol}")
-async def get_stock_analysis(symbol: str):
+async def get_stock_analysis_api(symbol: str):
+    data = get_full_stock_analysis(symbol, include_chart=True)
+    if data is None:
+        return JSONResponse(status_code=404, content={"error": f"Không tìm thấy dữ liệu cho mã {symbol.upper().strip()}"})
+    return data
+
+
+@app.get("/api/backtest/{symbol}")
+async def run_stock_backtest(
+    symbol: str,
+    strategy: str = Query("sepa_combo"),
+    years: int = Query(5, ge=0, le=10),
+    stop_loss_pct: float = Query(7.0, ge=1.0, le=40.0),
+    take_profit_pct: float = Query(20.0, ge=0.0, le=200.0),
+    trailing_ma: str = Query("NONE"),
+    max_hold_days: int = Query(60, ge=0, le=500),
+):
     symbol = symbol.upper().strip()
-
-    # 1. Load from DB or Fetch live (3 - 5 years of history)
-    df = load_ohlcv(symbol)
-    if df is None or len(df) < 500:
-        df = fetch_ohlcv(symbol, days=1825)
-        if df is not None and len(df) > 0:
-            save_ohlcv(symbol, df)
-
+    df = get_stock_ohlcv_df(symbol)
     if df is None or len(df) == 0:
-        return JSONResponse(status_code=404, content={"error": f"Không tìm thấy dữ liệu cho mã {symbol}"})
+        return JSONResponse(status_code=404, content={"error": f"Không tìm thấy dữ liệu lịch sử cho mã {symbol}"})
 
-    # 2. Calculate Indicators (MA10, MA20, MA50, MA150, MA200) & Minervini signals
-    df_calc = calculate_technical_indicators(df)
-    signals = detect_minervini_signals(df_calc)
+    return run_backtest(
+        symbol=symbol,
+        df_ohlcv=df,
+        strategy=strategy,
+        years=years,
+        stop_loss_pct=stop_loss_pct,
+        take_profit_pct=take_profit_pct,
+        trailing_ma=trailing_ma,
+        max_hold_days=max_hold_days,
+    )
 
-    # 3. RS Rating (1-99)
-    rs_val = get_rs_rating(symbol)
-    if rs_val is None:
-        raw_score = calculate_stock_rs_score(df_calc)
-        rs_val = min(99, max(1, int(50 + raw_score * 40)))
-        save_rs_rating(symbol, rs_val)
 
-    # 4. Trend Template (8/8 criteria)
-    trend_res = evaluate_trend_template(df_calc, rs_rating=rs_val)
+@app.post("/api/ai-analyze/{symbol}")
+async def ai_analyze_stock_api(symbol: str, body: AiAnalyzeRequest):
+    result = analyze_stock_ai(
+        symbol=symbol,
+        mode=body.mode,
+        api_key=body.api_key,
+        model=body.model,
+        ollama_url=body.ollama_url,
+    )
+    if result is None:
+        return JSONResponse(status_code=404, content={"error": f"Không tìm thấy dữ liệu cho mã {symbol.upper().strip()}"})
+    return result
 
-    # 5. Financial statements & ratios
-    fin_data = get_fundamentals(symbol)
-    if not fin_data:
-        fin_data = fetch_financial_ratios(symbol)
-        if fin_data:
-            save_fundamentals(fin_data)
 
-    current_price = float(df_calc.iloc[-1]['close'])
-    company_name = get_company_name(symbol)
+# ==============================================================================
+# Self-Hosted Standard MCP (Model Context Protocol) Streamable HTTP Endpoints
+# ==============================================================================
+MCP_CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id, MCP-Protocol-Version",
+}
 
-    # 6. Broker Consensus Target Price & Valuation
-    broker_consensus = get_broker_consensus(symbol, current_price)
-    valuation = calculate_valuation_metrics(symbol, current_price, fin_data or {})
 
-    # Format chart data (up to 1,500 trading days ~ 5-6 years)
-    chart_records = df_calc.tail(1500).to_dict(orient='records')
-    # Clean NaN values for JSON serialization
-    for row in chart_records:
-        for k, v in row.items():
-            if str(v) == 'nan':
-                row[k] = None
+@app.options("/mcp")
+async def mcp_options():
+    return Response(status_code=204, headers=MCP_CORS_HEADERS)
 
-    return {
-        "symbol": symbol,
-        "company_name": company_name,
-        "current_price": current_price,
-        "rs_rating": rs_val,
-        "trend_template": trend_res,
-        "signals": signals[-15:], # latest signals
-        "fundamentals": fin_data,
-        "broker_consensus": broker_consensus,
-        "valuation": valuation,
-        "chart_data": chart_records
-    }
+
+@app.get("/mcp")
+async def mcp_discovery(request: Request):
+    base = str(request.base_url).rstrip("/")
+    return JSONResponse(content=get_mcp_server_metadata(base), headers=MCP_CORS_HEADERS)
+
+
+@app.post("/mcp")
+async def mcp_jsonrpc_endpoint(request: Request):
+    if not _check_mcp_auth(request):
+        return JSONResponse(
+            status_code=401,
+            content={"error": "unauthorized", "message": "Invalid or missing MCP Bearer token"},
+            headers={"WWW-Authenticate": "Bearer", **MCP_CORS_HEADERS},
+        )
+
+    try:
+        payload = await request.json()
+    except Exception as e:
+        return JSONResponse(
+            status_code=400,
+            content={"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": f"Parse error: {e}"}},
+            headers=MCP_CORS_HEADERS,
+        )
+
+    resp = handle_mcp_jsonrpc(payload)
+    if resp is None:
+        return Response(status_code=202, headers=MCP_CORS_HEADERS)
+
+    return JSONResponse(
+        content=resp,
+        headers={"MCP-Protocol-Version": "2024-11-05", **MCP_CORS_HEADERS},
+    )
+
+
+@app.get("/api/mcp/info")
+async def mcp_info_api(request: Request):
+    base = str(request.base_url).rstrip("/")
+    meta = get_mcp_server_metadata(base)
+    meta["stdio_python"] = str(BASE_DIR / ".venv" / "bin" / "python")
+    meta["stdio_script"] = str(BASE_DIR / "mcp_server.py")
+    return meta
 
 
 @app.post("/api/update-daily")
